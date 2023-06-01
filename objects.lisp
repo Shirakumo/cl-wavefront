@@ -93,11 +93,14 @@
          (face-length (length (vertices prototype)))
          (vertex-data (make-array 0 :element-type 'single-float :adjustable T :fill-pointer T))
          (index-data (make-array 0 :element-type 'single-float :adjustable T :fill-pointer T))
-         (attributes '(:position)))
-    (when (< 0 (length (uvs prototype)))
-      (push :uv attributes))
+         (attributes '()))
+    (when (< 0 (length (vertices prototype)))
+      (push :position attributes))
     (when (< 0 (length (normals prototype)))
       (push :normal attributes))
+    (when (< 0 (length (uvs prototype)))
+      (push :uv attributes))
+    (setf attributes (reverse attributes))
     (let ((size-per-element (+ (if (member :position attributes) 3 0)
                                (if (member :uv attributes) 2 0)
                                (if (member :normal attributes) 3 0)))
@@ -110,8 +113,8 @@
                        for index = (loop for attribute in attributes
                                          collect (aref (ecase attribute
                                                          (:position (vertices face))
-                                                         (:uv (uvs face))
-                                                         (:normal (normals face)))
+                                                         (:normal (normals face))
+                                                         (:uv (uvs face)))
                                                        i))
                        for idx = (gethash index index-cache)
                        do (unless idx
@@ -122,10 +125,10 @@
                                   do (case attribute
                                        (:position
                                         (copy (vertices context) (* i 4) 3 vertex-data))
-                                       (:uv
-                                        (copy (uvs context) (* i 3) 2 vertex-data))
                                        (:normal
-                                        (copy (normals context) (* i 3) 3 vertex-data)))))
+                                        (copy (normals context) (* i 3) 3 vertex-data))
+                                       (:uv
+                                        (copy (uvs context) (* i 3) 2 vertex-data)))))
                           (vector-push-extend idx index-data))))
       (make-instance 'mesh
                      :vertex-data vertex-data
