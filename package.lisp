@@ -1,0 +1,76 @@
+#|
+ This file is a part of cl-wavefront
+ (c) 2023 Shirakumo http://tymoon.eu (shinmera@tymoon.eu)
+ Author: Nicolas Hafner <shinmera@tymoon.eu>
+|#
+
+(defpackage #:org.shirakumo.fraf.wavefront
+  (:use #:cl)
+  (:export
+   #:object
+   #:name
+   #:groups
+   #:texture-map
+   #:file
+   #:blend-u
+   #:blend-v
+   #:boost
+   #:origin
+   #:scale
+   #:turbulence
+   #:resolution
+   #:clamp
+   #:multiplier
+   #:bump-channel
+   #:specular-type
+   #:material
+   #:name
+   #:ambient-factor
+   #:diffuse-factor
+   #:specular-factor
+   #:transmission-factor
+   #:transmission-filter
+   #:refractive-index
+   #:roughness-factor
+   #:metallic-factor
+   #:sheen-factor
+   #:emissive-factor
+   #:ambient-map
+   #:diffuse-map
+   #:specular-map
+   #:transmission-map
+   #:roughness-map
+   #:metallic-map
+   #:sheen-map
+   #:emissive-map
+   #:bump-map
+   #:displacement-map
+   #:stencil-map
+   #:normal-map
+   #:rough-metal-occlusion-map
+   #:face
+   #:vertices
+   #:uvs
+   #:normals
+   #:material
+   #:group
+   #:name
+   #:faces
+   #:lod
+   #:context
+   #:vertices
+   #:uvs
+   #:normals
+   #:groups
+   #:materials
+   #:objects
+   #:mesh
+   #:vertex-data
+   #:face-data
+   #:material
+   #:attributes
+   #:shared-faces
+   #:faces-to-mesh
+   #:extract-meshes)
+  (:export
+   #:parse))
