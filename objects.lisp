@@ -134,7 +134,7 @@
                      :attributes attributes
                      :face-length face-length))))
 
-(defun extract-meshes (context thing)
+(defun extract-meshes (context &optional thing)
   (etypecase thing
     (vector
      (loop for faces in (shared-faces thing)
@@ -146,4 +146,11 @@
        (loop for group across (groups thing)
              do (loop for face across (faces group)
                       do (vector-push-extend face faces)))
+       (extract-meshes context faces)))
+    (null
+     (let ((faces (make-array 0 :adjustable T :fill-pointer T)))
+       (loop for object across (objects thing)
+             do (loop for group across (groups thing)
+                      do (loop for face across (faces group)
+                               do (vector-push-extend face faces))))
        (extract-meshes context faces)))))

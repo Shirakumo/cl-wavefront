@@ -1,0 +1,17 @@
+# About cl-wavefront
+This library implements the Wavefront OBJ 3D model format.
+
+## How To
+Load the library, and parse a file:
+
+:: common lisp
+(org.shirakumo.fraf.wavefront:parse #p"my-file.obj")
+::
+
+It'll return a ``context`` which holds the ``vertices``, ``uvs``, ``normals``, ``materials``, ``groups``, and ``objects`` defined by the file. You can parse either ``obj`` or ``mtl`` files. If the ``obj`` references an ``mtl`` file, it is automatically parsed as well.
+
+The format defines mesh data rather loosely, allowing different materials per face, different face referencing mechanisms, varying indices per vertex attributes, and so on, which makes it rather hard to directly use for rendering. To convert an entire file, specific object, or specific face group, you can call ``extract-meshes``.
+
+This will instead return a list of ``mesh`` instances, which have the ``vertex-data`` normalised and packed into a single vector, and deduplicated indices into an ``index-data`` vector. Each mesh also has only a single ``material``, vertex ``attributes`` set, and ``face-length``, which should simplify rendering a lot.
+
+Note that meshes still do not guarantee triangular meshes. If the source data contains quads or other polygons, you must tessellate the mesh yourself.
