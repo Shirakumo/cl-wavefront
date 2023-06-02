@@ -6,9 +6,15 @@
 
 (in-package #:org.shirakumo.fraf.wavefront)
 
-(defclass object ()
-  ((name :initarg :name :initform NIL :accessor name)
-   (groups :initarg :group :initform (make-array 0 :element-type T :adjustable T :fill-pointer T) :accessor groups)))
+(defclass named-object ()
+  ((name :initarg :name :initform NIL :accessor name)))
+
+(defmethod print-object ((object named-object) stream)
+  (print-unreadable-object (object stream :type T :identity (null (name object)))
+    (when (name object) (princ (name object) stream))))
+
+(defclass object (named-object)
+  ((groups :initarg :group :initform (make-array 0 :element-type T :adjustable T :fill-pointer T) :accessor groups)))
 
 (defclass texture-map ()
   ((file :initarg :file :initform NIL :accessor file)
@@ -24,9 +30,12 @@
    (bump-channel :initarg :bump-channel :initform 1 :accessor bump-channel)
    (specular-type :initarg :specular-type :initform NIL :accessor specular-type)))
 
-(defclass material ()
-  ((name :initarg :name :initform NIL :accessor name)
-   (illumination-model :initarg :illumination-model :initform 2 :accessor illumination-model)
+(defmethod print-object ((object texture-map) stream)
+  (print-unreadable-object (object stream :type T)
+    (princ (file object) stream)))
+
+(defclass material (named-object)
+  ((illumination-model :initarg :illumination-model :initform 2 :accessor illumination-model)
    (ambient-factor :initarg :ambient-factor :initform #(0.0 0.0 0.0) :accessor ambient-factor)
    (diffuse-factor :initarg :diffuse-factor :initform #(0.0 0.0 0.0) :accessor diffuse-factor)
    (specular-factor :initarg :specular-factor :initform #(0.0 0.0 0.0) :accessor specular-factor)
@@ -58,9 +67,12 @@
    (normals :initarg :normals :accessor normals)
    (material :initarg :material :accessor material)))
 
-(defclass group ()
-  ((name :initarg :name :initform NIL :accessor name)
-   (faces :initform (make-array 0 :element-type T :adjustable T :fill-pointer T) :accessor faces)
+(defmethod print-object ((object face) stream)
+  (print-unreadable-object (object stream :type T)
+    (format stream "~a" (coerce (vertices object) 'list))))
+
+(defclass group (named-object)
+  ((faces :initform (make-array 0 :element-type T :adjustable T :fill-pointer T) :accessor faces)
    (lod :initform 0 :accessor lod)))
 
 (defclass context ()
@@ -74,7 +86,17 @@
    (current :initform NIL :accessor current)
    (material :initform NIL :accessor material)))
 
-(defclass mesh ()
+(defmethod print-object ((object context) stream)
+  (print-unreadable-object (object stream :type T)
+    (format stream "~a vert~:p~[~:;~:* ~a uv~:p~]~[~:;~:* ~a normal~:p~]~[~:;~:* ~a group~:p~]~[~:;~:* ~a material~:p~]~[~:;~:* ~a object~:p~]"
+            (length (vertices object))
+            (length (uvs object))
+            (length (normals object))
+            (hash-table-count (groups object))
+            (hash-table-count (materials object))
+            (hash-table-count (objects object)))))
+
+(defclass mesh (named-object)
   ((vertex-data :initarg :vertex-data :accessor vertex-data)
    (index-data :initarg :index-data :accessor index-data)
    (material :initarg :material :initform NIL :accessor material)
@@ -145,13 +167,21 @@
      (loop for faces in (shared-faces thing)
            collect (faces-to-mesh context faces)))
     (group
-     (extract-meshes context (faces thing)))
+     (let ((meshes (extract-meshes context (faces thing))))
+       (loop for mesh in meshes
+             for i from 0
+             do (setf (name meshes) (format NIL "~a-~d" (name thing) i)))
+       meshes))
     (object
      (let ((faces (make-array 0 :adjustable T :fill-pointer T)))
        (loop for group across (groups thing)
              do (loop for face across (faces group)
                       do (vector-push-extend face faces)))
-       (extract-meshes context faces)))
+       (let ((meshes (extract-meshes context faces)))
+         (loop for mesh in meshes
+               for i from 0
+               do (setf (name meshes) (format NIL "~a-~d" (name thing) i)))
+         meshes)))
     (null
      (let ((faces (make-array 0 :adjustable T :fill-pointer T)))
        (loop for object being the hash-values of (objects context)
