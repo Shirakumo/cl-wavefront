@@ -7,8 +7,9 @@
 (defpackage #:org.shirakumo.fraf.wavefront
   (:use #:cl)
   (:export
-   #:object
+   #:named-object
    #:name
+   #:object
    #:groups
    #:texture-map
    #:file
@@ -24,10 +25,11 @@
    #:bump-channel
    #:specular-type
    #:material
-   #:name
+   #:illumination-model
    #:ambient-factor
    #:diffuse-factor
    #:specular-factor
+   #:specular-exponent
    #:transmission-factor
    #:transmission-filter
    #:refractive-index
@@ -54,7 +56,6 @@
    #:normals
    #:material
    #:group
-   #:name
    #:faces
    #:lod
    #:context
