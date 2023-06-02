@@ -67,7 +67,7 @@
    #:objects
    #:mesh
    #:vertex-data
-   #:face-data
+   #:index-data
    #:material
    #:attributes
    #:face-length

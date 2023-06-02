@@ -410,7 +410,7 @@ See OBJECT")
     "Representation of packed vertex data.
 
 See VERTEX-DATA
-See FACE-DATA
+See INDEX-DATA
 See ATTRIBUTES
 See FACES-TO-MESH
 See EXTRACT-MESHES")
@@ -428,7 +428,7 @@ See MESH
 See ATTRIBUTES
 See FACE-LENGTH")
   
-  (function face-data
+  (function index-data
     "Accesses the vector of packed face indices.
 
 This is a vector of (UNSIGNED-BYTE 32)s describing the vertex indices
