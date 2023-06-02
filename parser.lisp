@@ -48,21 +48,22 @@
 (defmethod %parse ((context context) command line)
   (warn "Unknown command ~a on line ~d:~%  ~a" command *line-number* line))
 
-(defun compile-arglist-regex (args)
-  (with-output-to-string (out)
-    (format out "\\s*")
-    (loop with optional = NIL
-          for cons on args
-          do (case (car cons)
-               (&optional
-                (setf optional T)
-                (format out "(:?"))
-               (&rest
-                (format out "\\s*(.*)\\s*")
-                (loop-finish))
-               (T
-                (format out "([^ ]+)~@[\\s*~]" (cdr cons))))
-          finally (when optional (format out ")?")))))
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defun compile-arglist-regex (args)
+    (with-output-to-string (out)
+      (format out "\\s*")
+      (loop with optional = NIL
+            for cons on args
+            do (case (car cons)
+                 (&optional
+                  (setf optional T)
+                  (format out "(:?"))
+                 (&rest
+                  (format out "\\s*(.*)\\s*")
+                  (loop-finish))
+                 (T
+                  (format out "([^ ]+)~@[\\s*~]" (cdr cons))))
+            finally (when optional (format out ")?"))))))
 
 (defmacro define-parser (command args &body body)
   (let ((regex (compile-arglist-regex args)))
@@ -108,6 +109,7 @@
                (resolve-index normal normals (floor (length (normals context)) 3))))
     (unless (typep (current context) 'group)
       (let ((group (make-instance 'group :name NIL)))
+        (vector-push-extend group (groups (object context)))
         (setf (gethash NIL (groups context)) group)
         (setf (current context) group)))
     (vector-push-extend (make-instance 'face :vertices vertices :uvs uvs :normals normals
@@ -140,7 +142,7 @@
   (setf (lod (current context)) (parse-integer level)))
 
 (define-parser :mtllib (file)
-  (parse file context))
+  (parse (merge-pathnames file) context))
 
 (defmacro define-property-parser (command args accessor)
   `(define-parser ,command ,args
@@ -156,23 +158,28 @@
 (define-property-parser :tr (v) transmission-factor)
 (define-property-parser :tf (r g b) transmission-filter)
 (define-property-parser :ni (v) refractive-index)
+(define-property-parser :ns (v) specular-exponent)
 (define-property-parser :pr (r g b) roughness-factor)
 (define-property-parser :pm (r g b) metallic-factor)
 (define-property-parser :ps (r g b) sheen-factor)
 (define-property-parser :ke (r g b) emissive-factor)
+(define-parser :illum (v)
+  (setf (illumination-model (current context)) (parse-integer v)))
 
 (defmacro define-map-parser (command accessor)
   `(define-parser ,command (&rest map-args)
      (setf (,accessor (current context)) (parse-map map-args))))
 
 (defun parse-map (args)
-  (let ((map (make-instance 'texture-map)))
+  (let ((map (make-instance 'texture-map))
+        (args args))
     (flet ((parse-many ()
              (cl:map '(vector single-float) #'parse-float:parse-float
                   (loop repeat 3
                         until (or (null args) (string= "-" (car args) :end2 1))
                         collect (pop args)))))
       (loop for arg = (pop args)
+            while arg
             do (cond ((string= arg "-blendu")
                       (setf (blend-u map) (string= "on" (pop args))))
                      ((string= arg "-blendv")
@@ -199,10 +206,11 @@
                       (warn "Unrecognized texture map option: ~a" arg)
                       (pop args))
                      (T
-                      (setf (file map) (merge-pathnames (pop args)))))))))
+                      (setf (file map) (merge-pathnames arg)))))
+      map)))
 
 (define-map-parser :map_ka ambient-map)
-(define-map-parser :map_kd difffuse-map)
+(define-map-parser :map_kd diffuse-map)
 (define-map-parser :map_ks specular-map)
 (define-map-parser :map_tr transmission-map)
 (define-map-parser :map_bump bump-map)
@@ -221,25 +229,30 @@
   (etypecase source
     (string
      (with-input-from-string (source source)
-       (parse source)))
+       (parse source context)))
     (pathname
      (let ((*default-pathname-defaults* source))
        (with-open-file (source source :direction :input)
-         (parse source))))
+         (parse source context))))
     (stream
      (unless context (setf context (make-instance 'context)))
      (loop with *line-number* = 0
            for line = (read-wavefront-line source)
            while line
-           do (let* ((command-name (subseq line 0 (or (position #\Space line) (length line))))
-                     (command (or (find-symbol (string-upcase command-name) "KEYWORD")
-                                  command-name)))
-                (%parse context command line)))
+           do (when (string/= "" line)
+                (let* ((command-name (subseq line 0 (or (position #\Space line) (length line))))
+                       (command (or (find-symbol (string-upcase command-name) "KEYWORD")
+                                    command-name)))
+                  (%parse context command line))))
+     ;; Ensure virtual groups and objects
+     (when (and (null (name (object context))) (< 0 (length (groups (object context)))))
+       (setf (gethash NIL (objects context)) (object context)))
      ;; Resolve materials
      (loop for group being the hash-values of (groups context)
            do (loop for face across (faces group)
                     for material = (gethash (material face) (materials context))
-                    do (unless material
-                         (warn "Unknown material referenced with name ~s" material))
-                       (setf (material face) material)))
+                    do (when (material face)
+                         (unless material
+                           (warn "Unknown material referenced with name ~s" (material face)))
+                         (setf (material face) material))))
      context)))
