@@ -15,3 +15,6 @@ The format defines mesh data rather loosely, allowing different materials per fa
 This will instead return a list of ``mesh`` instances, which have the ``vertex-data`` normalised and packed into a single vector, and deduplicated indices into an ``index-data`` vector. Each mesh also has only a single ``material``, vertex ``attributes`` set, and ``face-length``, which should simplify rendering a lot.
 
 Note that meshes still do not guarantee triangular meshes. If the source data contains quads or other polygons, you must tessellate the mesh yourself.
+
+## To Do
+This library currently only supports polygonal meshes. Other features such as points, curves, surfaces, and more are not included, but should be easy to add into the existing parser framework if needed.
