@@ -109,7 +109,7 @@
                (resolve-index normal normals (floor (length (normals context)) 3))))
     (unless (typep (current context) 'group)
       (let ((group (make-instance 'group :name NIL)))
-        (vector-push-extend group (groups (object context)))
+        (setf (gethash NIL (groups (object context))) group)
         (setf (gethash NIL (groups context)) group)
         (setf (current context) group)))
     (vector-push-extend (make-instance 'face :vertices vertices :uvs uvs :normals normals
@@ -118,13 +118,13 @@
 
 (define-parser :g (name)
   (let ((group (make-instance 'group :name name)))
-    (vector-push-extend group (groups (object context)))
+    (setf (gethash name (groups (object context))) group)
     (setf (gethash name (groups context)) group)
     (setf (current context) group)))
 
 (define-parser :o (name)
   ;; If the null object contains anything, register it.
-  (when (and (null (name (object context))) (< 0 (length (groups (object context)))))
+  (when (and (null (name (object context))) (< 0 (hash-table-count (groups (object context)))))
     (setf (gethash NIL (objects context)) (object context)))
   (let ((object (make-instance 'object :name name)))
     (setf (gethash name (objects context)) object)
@@ -201,7 +201,7 @@
                      ((string= arg "-imfchan")
                       (setf (bump-channel map) (intern (string-upcase (pop args)) "KEYWORD")))
                      ((string= arg "-type")
-                      (setf (specular-type map) (pop args)))
+                      (setf (texture-type map) (pop args)))
                      ((string= arg "-" :end1 1)
                       (warn "Unrecognized texture map option: ~a" arg)
                       (pop args))
@@ -245,7 +245,7 @@
                                     command-name)))
                   (%parse context command line))))
      ;; Ensure virtual groups and objects
-     (when (and (null (name (object context))) (< 0 (length (groups (object context)))))
+     (when (and (null (name (object context))) (< 0 (hash-table-count (groups (object context)))))
        (setf (gethash NIL (objects context)) (object context)))
      ;; Resolve materials
      (loop for group being the hash-values of (groups context)

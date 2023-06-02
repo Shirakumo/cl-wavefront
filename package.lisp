@@ -23,7 +23,7 @@
    #:clamp
    #:multiplier
    #:bump-channel
-   #:specular-type
+   #:texture-type
    #:material
    #:illumination-model
    #:ambient-factor
@@ -70,6 +70,7 @@
    #:face-data
    #:material
    #:attributes
+   #:face-length
    #:shared-faces
    #:faces-to-mesh
    #:extract-meshes)

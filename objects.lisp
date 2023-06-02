@@ -14,13 +14,13 @@
     (when (name object) (princ (name object) stream))))
 
 (defclass object (named-object)
-  ((groups :initarg :group :initform (make-array 0 :element-type T :adjustable T :fill-pointer T) :accessor groups)))
+  ((groups :initarg :group :initform (make-hash-table :test 'equal) :accessor groups)))
 
 (defclass texture-map ()
   ((file :initarg :file :initform NIL :accessor file)
    (blend-u :initarg :blend-u :initform T :accessor blend-u)
    (blend-v :initarg :blend-v :initform T :accessor blend-v)
-   (boost :initarg :boost :initform NIL :accessor boost)
+   (boost :initarg :boost :initform 1.0 :accessor boost)
    (origin :initarg :origin :initform #(0.0 0.0 0.0) :accessor origin)
    (scale :initarg :scale :initform #(1.0 1.0 1.0) :accessor scale)
    (turbulence :initarg :turbulence :initform #(0.0 0.0 0.0) :accessor turbulence)
@@ -28,7 +28,7 @@
    (clamp :initarg :clamp :initform NIL :accessor clamp)
    (multiplier :initarg :multiplier :initform 1.0 :accessor multiplier)
    (bump-channel :initarg :bump-channel :initform 1 :accessor bump-channel)
-   (specular-type :initarg :specular-type :initform NIL :accessor specular-type)))
+   (texture-type :initarg :texture-type :initform NIL :accessor texture-type)))
 
 (defmethod print-object ((object texture-map) stream)
   (print-unreadable-object (object stream :type T)
@@ -104,10 +104,11 @@
    (face-length :initarg :face-length :initform NIL :accessor face-length)))
 
 (defun shared-faces (faces)
-  (let ((table (make-hash-table :test 'eq)))
+  (let ((table (make-hash-table :test 'equal)))
     (loop for face across faces
-          for array = (or (gethash (material face) table)
-                          (setf (gethash (material face) table) (make-array 0 :adjustable T :fill-pointer T)))
+          for id = (list (material face) (length (vertices face)) (length (normals face)) (length (uvs face)))
+          for array = (or (gethash id table)
+                          (setf (gethash id table) (make-array 0 :adjustable T :fill-pointer T)))
           do (vector-push-extend face array))
     (loop for v being the hash-values of table
           collect v)))
@@ -174,7 +175,7 @@
        meshes))
     (object
      (let ((faces (make-array 0 :adjustable T :fill-pointer T)))
-       (loop for group across (groups thing)
+       (loop for group being the hash-values of (groups thing)
              do (loop for face across (faces group)
                       do (vector-push-extend face faces)))
        (let ((meshes (extract-meshes context faces)))
@@ -185,7 +186,7 @@
     (null
      (let ((faces (make-array 0 :adjustable T :fill-pointer T)))
        (loop for object being the hash-values of (objects context)
-             do (loop for group across (groups object)
+             do (loop for group being the hash-values of (groups object)
                       do (loop for face across (faces group)
                                do (vector-push-extend face faces))))
        (extract-meshes context faces)))))
