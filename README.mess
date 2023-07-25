@@ -16,5 +16,13 @@ This will instead return a list of ``mesh`` instances, which have the ``vertex-d
 
 Note that meshes still do not guarantee triangular meshes. If the source data contains quads or other polygons, you must tessellate the mesh yourself.
 
+You can also serialize a ``context`` or ``mesh`` back out:
+
+:: common lisp
+(org.shirakumo.fraf.wavefront:serialize context/mesh #p"my-file.obj")
+::
+
+You can also choose whether to export the material library file. By default it'll create a file with the same name and the extension ``.mtl`` if any materials are used in the context.
+
 ## To Do
 This library currently only supports polygonal meshes. Other features such as points, curves, surfaces, and more are not included, but should be easy to add into the existing parser framework if needed.
