@@ -112,19 +112,19 @@
      (if (member :uv attributes) 2 0)
      (if (member :normal attributes) 3 0)))
 
-(defun faces-to-mesh (context faces)
+(defun faces-to-mesh (context faces &optional attributes)
   (let* ((prototype (aref faces 0))
          (face-length (length (vertices prototype)))
          (vertex-data (make-array 0 :element-type 'single-float :adjustable T :fill-pointer T))
-         (index-data (make-array 0 :element-type '(unsigned-byte 32) :adjustable T :fill-pointer T))
-         (attributes '()))
-    (when (< 0 (length (vertices prototype)))
-      (push :position attributes))
-    (when (< 0 (length (normals prototype)))
-      (push :normal attributes))
-    (when (< 0 (length (uvs prototype)))
-      (push :uv attributes))
-    (setf attributes (reverse attributes))
+         (index-data (make-array 0 :element-type '(unsigned-byte 32) :adjustable T :fill-pointer T)))
+    (unless attributes
+      (when (< 0 (length (vertices prototype)))
+        (push :position attributes))
+      (when (< 0 (length (normals prototype)))
+        (push :normal attributes))
+      (when (< 0 (length (uvs prototype)))
+        (push :uv attributes))
+      (setf attributes (reverse attributes)))
     (let ((size-per-element (size-per-element attributes))
           (index-cache (make-hash-table :test 'equal)))
       (flet ((copy (source start count target)
@@ -159,13 +159,13 @@
                      :attributes attributes
                      :face-length face-length))))
 
-(defun extract-meshes (context &optional thing)
+(defun extract-meshes (context &optional thing attributes)
   (etypecase thing
     (vector
      (loop for faces in (shared-faces thing)
-           collect (faces-to-mesh context faces)))
+           collect (faces-to-mesh context faces attributes)))
     (group
-     (let ((meshes (extract-meshes context (faces thing))))
+     (let ((meshes (extract-meshes context (faces thing) attributes)))
        (loop for mesh in meshes
              for i from 0
              do (setf (name meshes) (format NIL "~a-~d" (name thing) i)))
@@ -175,7 +175,7 @@
        (loop for group being the hash-values of (groups thing)
              do (loop for face across (faces group)
                       do (vector-push-extend face faces)))
-       (let ((meshes (extract-meshes context faces)))
+       (let ((meshes (extract-meshes context faces attributes)))
          (loop for mesh in meshes
                for i from 0
                do (setf (name meshes) (format NIL "~a-~d" (name thing) i)))
@@ -186,7 +186,7 @@
              do (loop for group being the hash-values of (groups object)
                       do (loop for face across (faces group)
                                do (vector-push-extend face faces))))
-       (extract-meshes context faces)))))
+       (extract-meshes context faces attributes)))))
 
 (defun combine-meshes (thing &optional context)
   (let ((cache (make-hash-table :test 'equal)))
