@@ -114,9 +114,7 @@
 
 (defun faces-to-mesh (context faces &optional attributes)
   (let* ((prototype (aref faces 0))
-         (face-length (length (vertices prototype)))
-         (vertex-data (make-array 0 :element-type 'single-float :adjustable T :fill-pointer T))
-         (index-data (make-array 0 :element-type '(unsigned-byte 32) :adjustable T :fill-pointer T)))
+         (face-length (length (vertices prototype))))
     (unless attributes
       (when (< 0 (length (vertices prototype)))
         (push :position attributes))
@@ -126,7 +124,10 @@
         (push :uv attributes))
       (setf attributes (reverse attributes)))
     (let ((size-per-element (size-per-element attributes))
-          (index-cache (make-hash-table :test 'equal)))
+          (index-cache (make-hash-table :test 'equal))
+          (vertex-data (make-array 0 :element-type 'single-float :adjustable T :fill-pointer T))
+          (index-data (make-array (* face-length (length faces)) :element-type '(unsigned-byte 32)))
+          (ii -1))
       (flet ((copy (source start count target)
                (loop for i from start below (+ start count)
                      do (vector-push-extend (aref source i) target))))
@@ -151,9 +152,9 @@
                                         (copy (normals context) (* i 3) 3 vertex-data))
                                        (:uv
                                         (copy (uvs context) (* i 3) 2 vertex-data)))))
-                          (vector-push-extend idx index-data))))
+                          (setf (aref index-data (incf ii)) idx))))
       (make-instance 'mesh
-                     :vertex-data vertex-data
+                     :vertex-data (make-array (length vertex-data) :element-type 'single-float :initial-contents vertex-data)
                      :index-data index-data
                      :material (material prototype)
                      :attributes attributes

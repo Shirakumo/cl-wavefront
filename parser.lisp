@@ -128,6 +128,10 @@
     (setf (gethash name (objects context)) object)
     (setf (object context) object)))
 
+(define-parser :s (&rest args)
+  ;; ignore for now
+  )
+
 (define-parser :usemtl (material)
   (setf (material context) material))
 
