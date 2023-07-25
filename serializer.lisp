@@ -25,6 +25,9 @@
 (defmethod serialize ((meshes vector) stream &rest args &key &allow-other-keys)
   (apply #'serialize (combine-meshes meshes) stream args))
 
+(defmethod serialize ((meshes list) stream &rest args &key &allow-other-keys)
+  (apply #'serialize (combine-meshes meshes) stream args))
+
 (defmethod serialize ((context context) (stream stream) &key (material-library-file :create) (export-materials T) if-exists)
   (flet ((f (format &rest args)
            (format stream "~&~?~%" format args)))
