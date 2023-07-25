@@ -81,9 +81,9 @@
                           (f "usemtl ~a" (name (material face))))
                         (format stream "~&f")
                         (loop for i from 0 below (length (vertices face))
-                              for v = (aref (vertices face) i)
-                              for u = (when (< i (length (uvs face))) (aref (uvs face) i))
-                              for n = (when (< i (length (normals face))) (aref (normals face) i))
+                              for v = (1+ (aref (vertices face) i))
+                              for u = (when (< i (length (uvs face))) (1+ (aref (uvs face) i)))
+                              for n = (when (< i (length (normals face))) (1+ (aref (normals face) i)))
                               do (if n
                                      (format stream " ~d/~@[~d~]/~d" v u n)
                                      (format stream " ~d~@[/~d~]" v u)))

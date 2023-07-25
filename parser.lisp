@@ -77,8 +77,12 @@
 
 (defun resolve-index (index-ish array current-index)
   (let ((index (parse-integer index-ish)))
-    (when (< index 0)
-      (setf index (+ current-index index)))
+    (cond ((< index 0)
+           (setf index (+ index current-index)))
+          ((= index 0)
+           (error "0-based vertex indices are not allowed."))
+          (T
+           (setf index (- index 1))))
     (vector-push-extend index array)))
 
 (define-parser :v (x y z &optional w)
