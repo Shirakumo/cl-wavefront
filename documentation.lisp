@@ -329,6 +329,8 @@ See MATERIAL")
     "Accesses the vertices of the object
 
 For a FACE this is a vector of indices.
+Note that the indices are zero-based, rather than one-based like in
+the source OBJ file.
 Fro a CONTEXT this is a vector of single floats.
 
 See FACE
@@ -338,6 +340,8 @@ See CONTEXT")
     "Accesses the UV coordinates of the object
 
 For a FACE this is a vector of indices.
+Note that the indices are zero-based, rather than one-based like in
+the source OBJ file.
 Fro a CONTEXT this is a vector of single floats.
 
 See FACE
@@ -347,6 +351,8 @@ See CONTEXT")
     "Accesses the normals of the object
 
 For a FACE this is a vector of indices.
+Note that the indices are zero-based, rather than one-based like in
+the source OBJ file.
 Fro a CONTEXT this is a vector of single floats.
 
 See FACE
@@ -474,12 +480,29 @@ OBJECT to extract meshes from.
 
 As much as possible, names will be assigned to the resulting meshes.
 
+See COMBINE-MESHES
 See CONTEXT
 See FACE
 See GROUP
 See OBJECT
 See SHARED-FACES
-See FACES-TO-MESH"))
+See FACES-TO-MESH")
+
+  (function combine-meshes
+    "Combine meshes into a context
+
+You can pass a MESH, vector, or list of MESHes. If no CONTEXT is
+given, one is constructed and returned for you.
+
+This will attempt to reduce shared vertex attributes between existing
+mesh data in the context and the new meshes to properly pack the
+data.
+
+Each mesh will receive a group with the mesh's name.
+
+See EXTRACT-MESHES
+See CONTEXT
+See MESH"))
 
 ;; parser
 (docs:define-docs
@@ -497,3 +520,51 @@ A warning is signalled for any unrecognised directives.
 An error is signalled for any malformed directives.
 
 See CONTEXT"))
+
+;; serializer
+(docs:define-docs
+  (function serialize
+    "Serializes the given mesh, vector of meshes, or context to an OBJ file.
+
+This will also export a material library file if EXPORT-MATERIALS is
+not-NIL (the default) and the context contains materials. The file
+used for the material library is chosen as follows:
+
+- If MATERIAL-LIBRARY-FILE is a string or pathname, then:
+  The material library path is merged with the main OBJ file's
+- If MATERIAL-LIBRARY-FILE is :CREATE (the default), then:
+  The material library path is the same as the main OBJ file's, but
+  with the \"mtl\" pathname-type.
+- If MATERIAL-LIBRARY-FILE is NIL, then:
+  No file is created and the materials are emitted into the main OBJ
+  file at the beginning. Note that this is not supported by all
+  parsers.
+
+If EXPORT-MATERIALS is NIL but MATERIAL-LIBRARY-FILE is a string or
+pathname, then only a reference to the material library file is
+emitted into the OBJ file, but no MTL file is created and no material
+definitions are emitted into the OBJ file.
+
+If TARGET is a string or pathname, the OBJ file is output to that
+path. IF-EXISTS follows the usual semantics of OPEN.
+
+If the TARGET is not a FILE-STREAM or pathname designator, then
+MATERIAL-LIBRARY-FILE must either be a string or pathname, or
+EXPORT-MATERIALS must be set to NIL.
+
+If the TARGET is :STRING, then the OBJ is written to a string, which
+is then returned.
+
+See CONTEXT
+See MESH
+See COMBINE-MESHES")
+
+  (function serialize-simple
+    "Shorthand to serialize a single packed mesh.
+
+Constructs a MESH and then calls SERIALIZE.
+The vertices are expected to only contain positions, and the indices
+must denote triangles.
+
+See SERIALIZE
+See MESH"))

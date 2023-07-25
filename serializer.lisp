@@ -8,17 +8,16 @@
 (defgeneric serialize (context target &key material-library-file export-materials if-exists))
 
 (defmethod serialize (context (target (eql :string)) &rest args &key &allow-other-keys)
- (with-output-to-string (target)
-   (apply #'serialize context target args)))
+  (with-output-to-string (target)
+    (apply #'serialize context target args)))
 
 (defmethod serialize (context (target string) &rest args &key &allow-other-keys)
- (with-output-to-string (target target)
-   (apply #'serialize context target args)))
+  (apply #'serialize context (pathname target) args))
 
 (defmethod serialize (context (target pathname) &rest args &key (if-exists :error) &allow-other-keys)
- (let ((*default-pathname-defaults* target))
-   (with-open-file (target target :direction :output :if-exists if-exists)
-     (apply #'serialize context target args))))
+  (let ((*default-pathname-defaults* target))
+    (with-open-file (target target :direction :output :if-exists if-exists)
+      (apply #'serialize context target args))))
 
 (defmethod serialize ((mesh mesh) stream &rest args &key &allow-other-keys)
   (apply #'serialize (combine-meshes mesh) stream args))
