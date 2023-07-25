@@ -56,10 +56,10 @@
    (rough-metal-occlusion-map :initarg :rough-metal-occlusion-map :initform NIL :accessor rough-metal-occlusion-map)))
 
 (defclass face ()
-  ((vertices :initarg :vertices :accessor vertices)
-   (uvs :initarg :uvs :accessor uvs)
-   (normals :initarg :normals :accessor normals)
-   (material :initarg :material :accessor material)))
+  ((vertices :initarg :vertices :initform (make-array 0 :element-type '(unsigned-byte 32) :adjustable T :fill-pointer T) :accessor vertices)
+   (uvs :initarg :uvs :initform (make-array 0 :element-type '(unsigned-byte 32) :adjustable T :fill-pointer T) :accessor uvs)
+   (normals :initarg :normals :initform (make-array 0 :element-type '(unsigned-byte 32) :adjustable T :fill-pointer T) :accessor normals)
+   (material :initarg :material :initform NIL :accessor material)))
 
 (defmethod print-object ((object face) stream)
   (print-unreadable-object (object stream :type T)
@@ -95,7 +95,7 @@
    (index-data :initarg :index-data :accessor index-data)
    (material :initarg :material :initform NIL :accessor material)
    (attributes :initarg :attributes :initform () :accessor attributes)
-   (face-length :initarg :face-length :initform NIL :accessor face-length)))
+   (face-length :initarg :face-length :initform 3 :accessor face-length)))
 
 (defun shared-faces (faces)
   (let ((table (make-hash-table :test 'equal)))
@@ -106,6 +106,11 @@
           do (vector-push-extend face array))
     (loop for v being the hash-values of table
           collect v)))
+
+(defun size-per-element (attributes)
+  (+ (if (member :position attributes) 3 0)
+     (if (member :uv attributes) 2 0)
+     (if (member :normal attributes) 3 0)))
 
 (defun faces-to-mesh (context faces)
   (let* ((prototype (aref faces 0))
@@ -120,9 +125,7 @@
     (when (< 0 (length (uvs prototype)))
       (push :uv attributes))
     (setf attributes (reverse attributes))
-    (let ((size-per-element (+ (if (member :position attributes) 3 0)
-                               (if (member :uv attributes) 2 0)
-                               (if (member :normal attributes) 3 0)))
+    (let ((size-per-element (size-per-element attributes))
           (index-cache (make-hash-table :test 'equal)))
       (flet ((copy (source start count target)
                (loop for i from start below (+ start count)
@@ -184,3 +187,85 @@
                       do (loop for face across (faces group)
                                do (vector-push-extend face faces))))
        (extract-meshes context faces)))))
+
+(defun combine-meshes (thing &optional context)
+  (let ((cache (make-hash-table :test 'equal)))
+    (if context
+        (flet ((try-cache (field length i)
+                 (let ((vals (loop for j from 0 below length
+                                   collect (aref (vertices context) (+ i j)))))
+                   (setf (gethash (list* field vals) cache) (truncate i length)))))
+          (loop for i from 0 below (length (vertices context)) by 4
+                do (try-cache :position 4 i))
+          (loop for i from 0 below (length (uvs context)) by 3
+                do (try-cache :uv 3 i))
+          (loop for i from 0 below (length (vertices context)) by 3
+                do (try-cache :normal 3 i)))
+          (setf context (make-instance 'context)))
+    (etypecase thing
+      (vector
+       (loop for mesh across thing
+             do (%combine-meshes mesh context cache)))
+      (list
+       (loop for mesh in thing
+             do (%combine-meshes mesh context cache)))
+      (mesh
+       (%combine-meshes thing context cache))))
+  context)
+
+(defun %combine-meshes (mesh context cache)
+  (let* ((g (make-instance 'group :name (name mesh)))
+         (s/e (size-per-element (attributes mesh)))
+         (vi (make-array (* (length (attributes mesh)) (truncate (length (vertex-data mesh)) s/e))))
+         (m (material mesh)))
+    (when m
+      (setf (gethash (name m) (materials context)) m))
+    (setf (gethash (name g) (groups context)) g)
+    (flet ((try-cache (field array &rest vals)
+             (let* ((field (list* field vals))
+                    (cached (gethash field cache)))
+               (cond (cached
+                      cached)
+                     (T
+                      (dolist (val vals (1- (setf (gethash field cache) (truncate (length array) (length vals)))))
+                        (vector-push-extend val array)))))))
+      (loop with i = 0
+            with v = (vertex-data mesh)
+            while (< i (length v))
+            do (loop for attribute in (attributes mesh)
+                     for j from 0
+                     do (ecase attribute
+                          (:position
+                           (let ((index (try-cache attribute (vertices context)
+                                                   (aref v (+ i 0))
+                                                   (aref v (+ i 1))
+                                                   (aref v (+ i 2))
+                                                   1.0)))
+                             (setf (aref vi (+ j (truncate i s/e))) index)
+                             (incf i 3)))
+                          (:uv
+                           (let ((index (try-cache attribute (uvs context)
+                                                   (aref v (+ i 0))
+                                                   (aref v (+ i 1))
+                                                   0.0)))
+                             (setf (aref vi (+ j (truncate i s/e))) index)
+                             (incf i 2)))
+                          (:normal
+                           (let ((index (try-cache attribute (normals context)
+                                                   (aref v (+ i 0))
+                                                   (aref v (+ i 1))
+                                                   (aref v (+ i 2)))))
+                             (setf (aref vi (+ j (truncate i s/e))) index)
+                             (incf i 3))))))
+      (loop with i = (index-data mesh)
+            for f from 0 below (length i) by (face-length mesh)
+            do (let ((face (make-instance 'face :material m)))
+                 (dotimes (g (face-length mesh))
+                   (loop for attribute in (attributes mesh)
+                         for j from 0
+                         do (vector-push-extend (aref vi (+ j (aref i (+ f g))))
+                                                (ecase attribute
+                                                  (:position (vertices face))
+                                                  (:uv (uvs mesh))
+                                                  (:normal (normals mesh))))))
+                 (vector-push-extend face (faces g)))))))

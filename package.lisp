@@ -67,6 +67,10 @@
    #:face-length
    #:shared-faces
    #:faces-to-mesh
-   #:extract-meshes)
+   #:extract-meshes
+   #:combine-meshes)
   (:export
-   #:parse))
+   #:parse)
+  (:export
+   #:serialize
+   #:serialize-simple))
