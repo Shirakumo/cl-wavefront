@@ -101,9 +101,9 @@
     (loop for v in verts
           for (vertex uv normal) = (cl-ppcre:split "/" v)
           do (resolve-index vertex vertices (floor (length (vertices context)) 4))
-             (when (string/= "" uv)
+             (when (and uv (string/= "" uv))
                (resolve-index uv uvs (floor (length (uvs context)) 3)))
-             (when (string/= "" normal)
+             (when (and normal (string/= "" normal))
                (resolve-index normal normals (floor (length (normals context)) 3))))
     (unless (typep (current context) 'group)
       (let ((group (make-instance 'group :name NIL)))
