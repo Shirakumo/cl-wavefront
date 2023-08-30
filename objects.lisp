@@ -228,7 +228,7 @@
                (cond (cached
                       cached)
                      (T
-                      (dolist (val vals (1- (setf (gethash field cache) (truncate (length array) (length vals)))))
+                      (dolist (val vals (setf (gethash field cache) (1- (truncate (length array) (length vals)))))
                         (vector-push-extend (float val 0f0) array)))))))
       (loop with i = 0
             with v = (vertex-data mesh)
