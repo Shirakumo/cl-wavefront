@@ -68,8 +68,9 @@
          ,@body))))
 
 (defun push-floats (array &rest float-ishs)
-  (dolist (float float-ishs array)
-    (vector-push-extend (parse-float:parse-float float) array)))
+  (dolist (string float-ishs array)
+    (let ((float (parse-float:parse-float string :type 'single-float)))
+      (vector-push-extend float array))))
 
 (defun parse-floats (&rest float-ishs)
   (let ((array (make-array (length float-ishs) :element-type 'single-float)))
