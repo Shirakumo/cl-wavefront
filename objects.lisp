@@ -179,7 +179,7 @@
        (let ((meshes (extract-meshes context faces attributes)))
          (loop for mesh in meshes
                for i from 0
-               do (setf (name meshes) (format NIL "~a-~d" (name thing) i)))
+               do (setf (name mesh) (format NIL "~a-~d" (name thing) i)))
          meshes)))
     (null
      (let ((faces (make-array 0 :adjustable T :fill-pointer T)))
