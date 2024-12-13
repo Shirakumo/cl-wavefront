@@ -69,7 +69,7 @@
 
 (defun push-floats (array &rest float-ishs)
   (dolist (string float-ishs array)
-    (let ((float (parse-float:parse-float string :type 'single-float)))
+    (let ((float (parse-float:parse-float string :type (array-element-type array))))
       (vector-push-extend float array))))
 
 (defun parse-floats (&rest float-ishs)

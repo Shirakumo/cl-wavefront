@@ -70,7 +70,7 @@
    (lod :initform 0 :accessor lod)))
 
 (defclass context ()
-  ((vertices :initform (make-array 0 :element-type 'single-float :adjustable T :fill-pointer T) :accessor vertices)
+  ((vertices :accessor vertices)
    (uvs :initform (make-array 0 :element-type 'single-float :adjustable T :fill-pointer T) :accessor uvs)
    (normals :initform (make-array 0 :element-type 'single-float :adjustable T :fill-pointer T) :accessor normals)
    (groups :initform (make-hash-table :test 'equal) :accessor groups)
@@ -79,6 +79,11 @@
    (object :initform (make-instance 'object) :accessor object)
    (current :initform NIL :accessor current)
    (material :initform NIL :accessor material)))
+
+(defmethod initialize-instance :after ((context context) &key (precision 'single-float))
+  (setf (vertices context) (ecase precision
+                             ((single-float double-float)
+                              (make-array 0 :element-type precision :adjustable T :fill-pointer T)))))
 
 (defmethod print-object ((object context) stream)
   (print-unreadable-object (object stream :type T)
