@@ -224,9 +224,6 @@
          (s/e (size-per-element (attributes mesh)))
          (vi (make-array (* (length (attributes mesh)) (truncate (length (vertex-data mesh)) s/e))))
          (m (material mesh)))
-    (when m
-      (setf (gethash (name m) (materials context)) m))
-    (setf (gethash (name g) (groups context)) g)
     (flet ((try-cache (field array &rest vals)
              (let* ((field (list* field vals))
                     (cached (gethash field cache)))
@@ -264,6 +261,9 @@
                              (setf (aref vi (+ j (truncate i s/e))) index)
                              (incf i 3))))))
       (when (index-data mesh)
+        (when m
+          (setf (gethash (name m) (materials context)) m))
+        (setf (gethash (name g) (groups context)) g)
         (loop with i = (index-data mesh)
               for f from 0 below (length i) by (face-length mesh)
               do (let ((face (make-instance 'face :material m)))
