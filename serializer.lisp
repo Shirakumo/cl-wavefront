@@ -17,7 +17,8 @@
 (defmethod serialize (context (target pathname) &rest args &key (if-exists :error) &allow-other-keys)
   (let ((*default-pathname-defaults* target))
     (with-open-file (target target :direction :output :if-exists if-exists)
-      (apply #'serialize context target args))))
+      (apply #'serialize context target args))
+    target))
 
 (defmethod serialize ((mesh mesh) stream &rest args &key &allow-other-keys)
   (apply #'serialize (combine-meshes mesh) stream args))
