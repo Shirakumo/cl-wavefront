@@ -263,15 +263,16 @@
                                                    (aref v (+ i 2)))))
                              (setf (aref vi (+ j (truncate i s/e))) index)
                              (incf i 3))))))
-      (loop with i = (index-data mesh)
-            for f from 0 below (length i) by (face-length mesh)
-            do (let ((face (make-instance 'face :material m)))
-                 (dotimes (g (face-length mesh))
-                   (loop for attribute in (attributes mesh)
-                         for j from 0
-                         do (vector-push-extend (aref vi (+ j (aref i (+ f g))))
-                                                (ecase attribute
-                                                  (:position (vertices face))
-                                                  (:uv (uvs mesh))
-                                                  (:normal (normals mesh))))))
-                 (vector-push-extend face (faces g)))))))
+      (when (index-data mesh)
+        (loop with i = (index-data mesh)
+              for f from 0 below (length i) by (face-length mesh)
+              do (let ((face (make-instance 'face :material m)))
+                   (dotimes (g (face-length mesh))
+                     (loop for attribute in (attributes mesh)
+                           for j from 0
+                           do (vector-push-extend (aref vi (+ j (aref i (+ f g))))
+                                                  (ecase attribute
+                                                    (:position (vertices face))
+                                                    (:uv (uvs mesh))
+                                                    (:normal (normals mesh))))))
+                   (vector-push-extend face (faces g))))))))
