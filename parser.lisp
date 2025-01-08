@@ -145,7 +145,8 @@
   (setf (lod (current context)) (parse-integer level)))
 
 (define-parser :mtllib (file)
-  (parse (merge-pathnames file) context))
+  (with-simple-restart (continue "Ignore the material library")
+    (parse (merge-pathnames file) context)))
 
 (defmacro define-property-parser (command args accessor)
   `(define-parser ,command ,args
