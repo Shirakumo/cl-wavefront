@@ -4,9 +4,9 @@
   :author "Yukari Hafner <shinmera@tymoon.eu>"
   :maintainer "Yukari Hafner <shinmera@tymoon.eu>"
   :description "A library to parse the Wavefront OBJ file format."
-  :homepage "https://shirakumo.github.io/cl-wavefront/"
-  :bug-tracker "https://github.com/shirakumo/cl-wavefront/issues"
-  :source-control (:git "https://github.com/shirakumo/cl-wavefront.git")
+  :homepage "https://shirakumo.org/docs/cl-wavefront/"
+  :bug-tracker "https://shirakumo.org/project/cl-wavefront/issues"
+  :source-control (:git "https://shirakumo.org/project/cl-wavefront.git")
   :serial T
   :components ((:file "package")
                (:file "objects")
